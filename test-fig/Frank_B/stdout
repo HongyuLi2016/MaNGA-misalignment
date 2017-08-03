@@ -1,0 +1,20 @@
+**************************************************
+Toy distribution created at 2017-08-03 16:39:05
+method (distribution fuction): gaussian
+nsteps: 1000    nwalkers: 300
+burnin steps: 300
+boundaries:
+zeta: [0.50, 1.00]
+eta: [0.50, 1.00]
+Psai_int: [0.00, 1.57]
+Hyper parameters:
+--------------------
+icov
+[[  1000000.                 0.                 0.        ]
+ [        0.           1000000.                 0.        ]
+ [        0.                 0.          32828063.50011743]]
+--------------------
+means
+[ 0.66        0.75757576  1.25663706]
+--------------------
+Finish! Total elapsed time for creation is: 7.92s

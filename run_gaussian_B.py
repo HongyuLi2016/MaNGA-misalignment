@@ -23,7 +23,7 @@ import pickle
 import sys
 
 # util_angle.boundary['zeta'][0] = 0.0
-# util_angle.boundary['ksai'][0] = 0.0
+# util_angle.boundary['eta'][0] = 0.0
 
 parser = OptionParser()
 (options, args) = parser.parse_args()
@@ -37,12 +37,12 @@ except OSError:
 f = open('{}/stdout'.format(args[0]), 'w')
 sys.stdout = f
 # assign hyper parameter values
-mean_zeta = 0.75
-mean_eta = 0.75
-mean_Psai_int = 1.2
+mean_zeta = 0.66
+mean_eta = 50.0/66.0
+mean_Psai_int = np.radians(72.0)
 sigma_zeta = 0.1
 sigma_eta = 0.1
-sigma_Psai_int = 0.1
+sigma_Psai_int = np.radians(5.0)
 # assign sampler parameters
 nsteps = 1000
 nwalkers = 300
@@ -81,6 +81,7 @@ rst['costheta'] = np.cos(theta)
 rst['phi'] = phi
 # analysis distribution of apparent misalignment
 util_analysis.analysis_distribution(rst, outpath=args[0])
+# util_analysis.plot_axis_ratio(zeta, ksai, outpath=args[0])
 with open('{}/rst.dat'.format(args[0]), 'w') as f:
     pickle.dump(rst, f)
 f.close()
