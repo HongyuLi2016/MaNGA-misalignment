@@ -1,0 +1,11 @@
+**************************************************
+Chain created at 2017-08-03 23:39:56 on LHY-Mac.home
+nstep: 3000    nwalkers: 200    threads: 1
+burnin steps: 500
+boundaries:
+zeta: [0.50, 1.00]
+eta: [0.50, 1.00]
+Psai_int: [0.00, 1.57]
+Psai_obs: 15.0  err: 10.0
+eps_obs: 0.40  err: 0.05
+Finish! Total elapsed time is: 79.13s

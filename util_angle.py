@@ -17,14 +17,14 @@ import numpy as np
 from scipy import stats
 # import emcee
 # from JAM.utils import corner_plot
-from JAM.utils import util_fig
+# from JAM.utils import util_fig
 # import matplotlib.pyplot as plt
 # from time import time, localtime, strftime
 
 
-util_fig.ticks_font.set_size(12)
-util_fig.ticks_font1.set_size(8)
-util_fig.label_font.set_size(25)
+# util_fig.ticks_font.set_size(12)
+# util_fig.ticks_font1.set_size(8)
+# util_fig.label_font.set_size(25)
 
 
 def get_Gamma_kin(theta, phi, Psai_int):
