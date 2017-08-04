@@ -3,7 +3,7 @@
 # File: util_hierarchical.py
 # Author: Hongyu Li <lhy88562189@gmail.com>
 # Date: 03.08.2017
-# Last Modified: 03.08.2017
+# Last Modified: 04.08.2017
 # ============================================================================
 #  DESCRIPTION: ---
 #      OPTIONS: ---
@@ -20,6 +20,7 @@ from time import time, localtime, strftime
 import socket
 
 # import matplotlib.pyplot as plt
+# ----------------------------- single mcmc -------------------------------
 boundary = {'zeta': [0.5, 1.0], 'eta': [0.5, 1.0],
             'Psai_int': [0.0, np.pi/2.0], 'costheta': [-1.0, 1.0],
             'phi': [0.0, 2.0*np.pi]}
@@ -28,8 +29,29 @@ parLabels = [r'$\mathbf{\zeta}$', r'$\mathbf{\eta}$',
              r'$\mathbf{\Psi_{int}}$', r'$\mathbf{cos\theta}$',
              r'$\mathbf{\phi}$']
 
+# ---------------------------- hyper mcmc A --------------------------------
+boundary_A = {'mu_zeta': [0.5, 1.0], 'sigma_zeta': [0.0, 10.0],
+              'mu_eta': [0.5, 1.0], 'sigma_eta': [0.0, 10.0],
+              'mu_Psai_int': [0.0, np.pi/2.0],
+              'sigma_Psai_int': [0.0, 10.0*np.pi]}
+paraNames_A = ['mu_zeta', 'sigma_zeta', 'mu_eta', 'sigma_eta',
+               'mu_Psai_int', 'sigma_Psai_int']
+parLabels_A = [r'$\mathbf{\mu_{\zeta}}$', r'$\mathbf{\sigma_{\zeta}}$',
+               r'$\mathbf{\mu_{\eta}}$', r'$\mathbf{\sigma_{\eta}}$',
+               r'$\mathbf{\mu_{\Psi_{int}}}$',
+               r'$\mathbf{\sigma_{\Psi_{int}}}$']
 
-def check_boundary(pars):
+
+# read in chains from single galaxies
+def create_list(fname):
+    glist = np.genfromtxt(fname, dtype='30S')
+    paras_list = [np.load('{}/chain.npy'.format(gname))[:, 0:3]
+                  for gname in glist]
+    return paras_list
+
+
+# ---------------------- single mcmc for (eps, Psai) -------------------------
+def check_boundary(pars, boundary=None, paraNames=None):
     for i in range(len(pars)):
         if (boundary[paraNames[i]][0] < pars[i] < boundary[paraNames[i]][1]):
             pass
@@ -38,7 +60,7 @@ def check_boundary(pars):
     return True
 
 
-def flat_initp(keys, nwalkers):
+def flat_initp(keys, nwalkers, boundary=None):
     '''
     create initital positions for mcmc. Flat distribution within prior.
     keys: List of parameter name
@@ -54,7 +76,7 @@ def flat_initp(keys, nwalkers):
 
 
 def lnprob(pars, Psai_obs=None, Psai_err=None, eps_obs=None, eps_err=None):
-    in_boundary = check_boundary(pars)
+    in_boundary = check_boundary(pars, boundary=boundary, paraNames=paraNames)
     if not in_boundary:
         return -np.inf
     zeta, eta, Psai_int, costheta, phi = pars
@@ -77,21 +99,70 @@ def single_sample(Psai, eps, Psai_err=0.174, eps_err=0.05, nstep=1000,
           .format(nstep, nwalkers, threads))
     print('burnin steps: {}'.format(burnin))
     print('boundaries:')
-    print('zeta: [{:.2f}, {:.2f}]'.format(boundary['zeta'][0],
-                                          boundary['zeta'][1]))
-    print('eta: [{:.2f}, {:.2f}]'.format(boundary['eta'][0],
-                                         boundary['eta'][1]))
-    print('Psai_int: [{:.2f}, {:.2f}]'.format(boundary['Psai_int'][0],
-                                              boundary['Psai_int'][1]))
-    print('Psai_obs: {:.1f}  err: {:.1f}'
-          .format(np.degrees(Psai), np.degrees(Psai_err)))
-    print('eps_obs: {:.2f}  err: {:.2f}'.format(eps, eps_err))
-    p0 = flat_initp(paraNames, nwalkers)
+    for key in paraNames:
+        print('{}: [{:.2f}, {:.2f}]'.format(key, boundary[key][0],
+                                            boundary[key][1]))
+    p0 = flat_initp(paraNames, nwalkers, boundary=boundary)
+    print p0
     sampler = \
         emcee.EnsembleSampler(nwalkers, ndim, lnprob,
                               kwargs={'Psai_obs': Psai, 'eps_obs': eps,
                                       'Psai_err': Psai_err,
                                       'eps_err': eps_err},
+                              threads=threads)
+    pos, prob, state = sampler.run_mcmc(p0, burnin)
+    sampler.reset()
+    sampler.run_mcmc(pos, nstep)
+    print('Finish! Total elapsed time is: {:.2f}s'
+          .format(time()-startTime))
+    return sampler
+# ------------------------- single sampler end -------------------------------
+
+
+# ----------------------- hyper parameter sampler A --------------------------
+def likelihood_A_i(pars, hyper_pars=None):
+    '''
+    likelihood of a single observation (eps, Psai for a single galaxies)
+    hyper_pars:
+        [mu_zeta, sigma_zeta, mu_eta, sigma_eta, mu_Psai_int, sigma_Psai_int]
+    pars: MCMC chain from single sampler for a given (eps, Psai).  N*3 array
+    '''
+    mu = hyper_pars[[0, 2, 4]]
+    sigma = hyper_pars[[1, 3, 5]]
+    x = np.sum(((pars-mu)/sigma)**2, axis=1)
+    lnlikelihood = np.log(np.sum(np.exp(-0.5*x)))
+    return lnlikelihood
+
+
+def lnprob_hyper_A(hyper_pars, pars_list=None):
+    in_boundary = check_boundary(hyper_pars, boundary=boundary_A,
+                                 paraNames=paraNames_A)
+    if not in_boundary:
+        return -np.inf
+    likelihood_list = \
+        [likelihood_A_i(pars, hyper_pars=hyper_pars) for pars in pars_list]
+    return np.sum(likelihood_list)
+
+
+def hyperMCMC_A(pars_list, nstep=1000, burnin=500, nwalkers=200,
+                ndim=6, threads=1):
+    date = strftime('%Y-%m-%d %X', localtime())
+    uname = socket.gethostname()
+    print('**************************************************')
+    startTime = time()
+    print('hyperMCMC for model A run at {} on {}'.format(date, uname))
+    print('nstep: {}    nwalkers: {}    threads: {}'
+          .format(nstep, nwalkers, threads))
+    print('number of galaxies: {}'.format(len(pars_list)))
+    print('burnin steps: {}'.format(burnin))
+    print('boundaries:')
+    for key in paraNames_A:
+        print('{}: [{:.2f}, {:.2f}]'.format(key, boundary_A[key][0],
+                                            boundary_A[key][1]))
+    p0 = flat_initp(paraNames_A, nwalkers, boundary_A)
+    sampler = \
+        emcee.EnsembleSampler(nwalkers, ndim, lnprob_hyper_A,
+                              kwargs={'pars_list': pars_list},
                               threads=threads)
     pos, prob, state = sampler.run_mcmc(p0, burnin)
     sampler.reset()

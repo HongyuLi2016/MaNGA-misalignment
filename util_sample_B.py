@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: util_sample.py
+# File: util_sample_B.py
 # Author: Hongyu Li <lhy88562189@gmail.com>
 # Date: 02.08.2017
-# Last Modified: 02.08.2017
+# Last Modified: 04.08.2017
 # ============================================================================
 #  DESCRIPTION: ---
 #      OPTIONS: ---
