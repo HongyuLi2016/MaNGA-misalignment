@@ -3,7 +3,7 @@
 # File: util_hierarchical.py
 # Author: Hongyu Li <lhy88562189@gmail.com>
 # Date: 03.08.2017
-# Last Modified: 04.08.2017
+# Last Modified: 05.08.2017
 # ============================================================================
 #  DESCRIPTION: ---
 #      OPTIONS: ---
@@ -14,10 +14,13 @@
 #      VERSION: 0.0
 # ============================================================================
 import emcee
+from emcee.utils import MPIPool
+from mpi4py import MPI
 import numpy as np
 import util_angle
 from time import time, localtime, strftime
 import socket
+import sys
 
 # import matplotlib.pyplot as plt
 # ----------------------------- single mcmc -------------------------------
@@ -43,9 +46,9 @@ parLabels_A = [r'$\mathbf{\mu_{\zeta}}$', r'$\mathbf{\sigma_{\zeta}}$',
 
 
 # read in chains from single galaxies
-def create_list(fname):
+def create_list(fname, n=1):
     glist = np.genfromtxt(fname, dtype='30S')
-    paras_list = [np.load('{}/chain.npy'.format(gname))[:, 0:3]
+    paras_list = [np.load('{}/chain.npy'.format(gname))[::n, 0:3]
                   for gname in glist]
     return paras_list
 
@@ -103,7 +106,6 @@ def single_sample(Psai, eps, Psai_err=0.174, eps_err=0.05, nstep=1000,
         print('{}: [{:.2f}, {:.2f}]'.format(key, boundary[key][0],
                                             boundary[key][1]))
     p0 = flat_initp(paraNames, nwalkers, boundary=boundary)
-    print p0
     sampler = \
         emcee.EnsembleSampler(nwalkers, ndim, lnprob,
                               kwargs={'Psai_obs': Psai, 'eps_obs': eps,
@@ -146,27 +148,38 @@ def lnprob_hyper_A(hyper_pars, pars_list=None):
 
 def hyperMCMC_A(pars_list, nstep=1000, burnin=500, nwalkers=200,
                 ndim=6, threads=1):
-    date = strftime('%Y-%m-%d %X', localtime())
-    uname = socket.gethostname()
-    print('**************************************************')
-    startTime = time()
-    print('hyperMCMC for model A run at {} on {}'.format(date, uname))
-    print('nstep: {}    nwalkers: {}    threads: {}'
-          .format(nstep, nwalkers, threads))
-    print('number of galaxies: {}'.format(len(pars_list)))
-    print('burnin steps: {}'.format(burnin))
-    print('boundaries:')
-    for key in paraNames_A:
-        print('{}: [{:.2f}, {:.2f}]'.format(key, boundary_A[key][0],
-                                            boundary_A[key][1]))
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    if rank == 0:
+        date = strftime('%Y-%m-%d %X', localtime())
+        uname = socket.gethostname()
+        print('**************************************************')
+        startTime = time()
+        print('hyperMCMC for model A run at {} on {}'.format(date, uname))
+        print('nstep: {}    nwalkers: {}    nprocesses: {}'
+              .format(nstep, nwalkers, size))
+        print('number of galaxies: {}'.format(len(pars_list)))
+        print('Integration points: {}'.format(len(pars_list[0])))
+        print('burnin steps: {}'.format(burnin))
+        print('boundaries:')
+        for key in paraNames_A:
+            print('{}: [{:.2f}, {:.2f}]'.format(key, boundary_A[key][0],
+                                                boundary_A[key][1]))
+        sys.stdout.flush()
     p0 = flat_initp(paraNames_A, nwalkers, boundary_A)
+    pool = MPIPool(loadbalance=True)
+    if not pool.is_master():
+        pool.wait()
+        sys.exit(0)
     sampler = \
         emcee.EnsembleSampler(nwalkers, ndim, lnprob_hyper_A,
                               kwargs={'pars_list': pars_list},
-                              threads=threads)
+                              pool=pool)
     pos, prob, state = sampler.run_mcmc(p0, burnin)
     sampler.reset()
     sampler.run_mcmc(pos, nstep)
+    pool.close()
     print('Finish! Total elapsed time is: {:.2f}s'
           .format(time()-startTime))
     return sampler
