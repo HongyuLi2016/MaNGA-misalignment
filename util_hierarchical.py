@@ -132,7 +132,7 @@ def likelihood_A_i(pars, hyper_pars=None):
     mu = hyper_pars[[0, 2, 4]]
     sigma = hyper_pars[[1, 3, 5]]
     x = np.sum(((pars-mu)/sigma)**2, axis=1)
-    lnlikelihood = np.log(np.sum(np.exp(-0.5*x)))
+    lnlikelihood = np.log(np.sum(np.exp(-0.5*x))/np.prod(sigma))
     return lnlikelihood
 
 
