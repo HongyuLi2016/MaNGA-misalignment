@@ -19,6 +19,7 @@ import emcee
 from JAM.utils import corner_plot
 from JAM.utils import util_fig
 import matplotlib.pyplot as plt
+from scipy.stats import truncnorm
 from time import time, localtime, strftime
 boundary = {'zeta': [0.5, 1.0], 'eta': [0.5, 1.0],
             'Psai_int': [0.0, np.pi/2.0]}
@@ -119,8 +120,11 @@ def get_sample_mcmc(paras={}, nwalkers=300, burnin=300):
     return rst
 
 
-def get_sample():
-    return
+def get_sample(mean, sigma, boundary=[0.5, 1.0], size=1000):
+    a = (boundary[0] - mean) / sigma
+    b = (boundary[1] - mean) / sigma
+    rv = truncnorm(a, b, loc=mean, scale=sigma)
+    return rv.rvs(size=size)
 
 
 def plot_chains(chain):

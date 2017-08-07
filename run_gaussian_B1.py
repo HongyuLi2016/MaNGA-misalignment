@@ -37,37 +37,27 @@ except OSError:
 f = open('{}/stdout'.format(args[0]), 'w')
 sys.stdout = f
 # assign hyper parameter values
-mean_zeta = 0.75
+mean_zeta = 0.7
 mean_eta = 0.7
-mean_Psai_int = 0.78539816
-sigma_zeta = 0.05
-sigma_eta = 0.05
-sigma_Psai_int = 1745.329
+mean_Psai_int = 0.7853982
+sigma_zeta = 0.5
+sigma_eta = 0.5
+sigma_Psai_int = 1.0
 # assign sampler parameters
 nsteps = 1000
 nwalkers = 300
-
-means = np.array([mean_zeta, mean_eta, mean_Psai_int])
-icov = np.zeros([3, 3])
-icov[0, 0] = 1.0 / sigma_zeta**2
-icov[1, 1] = 1.0 / sigma_eta**2
-icov[2, 2] = 1.0 / sigma_Psai_int**2
-paras = {}
-paras['method'] = 'gaussian'
-paras['hypers'] = {'means': means, 'icov': icov}
-paras['steps'] = nsteps
-paras['nwalkers'] = nwalkers
+size = nsteps*nwalkers
 # draw a sample for axis ratios and intrinsic misalignments
-hyperParas = util_sample.get_sample_mcmc(paras=paras)
-# make figures about the sample
-util_sample.analysis_sample(hyperParas, outpath=args[0])
-# calculate apparent misalignment
-flatchain = hyperParas['chain'].reshape(-1, 3)
-theta, phi = util_angle.get_view_angle(nwalkers*nsteps)
-zeta = flatchain[:, 0]
-eta = flatchain[:, 1]
+zeta = util_sample.get_sample(mean_zeta, sigma_zeta,
+                              boundary=[0.5, 1.0], size=size)
+eta = util_sample.get_sample(mean_eta, sigma_eta,
+                             boundary=[0.5, 1.0], size=size)
 ksai = eta * zeta
-Psai_int = flatchain[:, 2]
+Psai_int = util_sample.get_sample(mean_Psai_int, sigma_Psai_int,
+                                  boundary=[0.0, np.pi/2.0], size=size)
+# calculate apparent misalignment
+theta, phi = util_angle.get_view_angle(nwalkers*nsteps)
+
 Psai, eps = util_angle.get_Psai(theta, phi, zeta, ksai, Psai_int)
 
 # save resutls in a dict
