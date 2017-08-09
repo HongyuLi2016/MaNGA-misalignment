@@ -5,7 +5,7 @@
 # Date: 03.08.2017
 # Last Modified: 03.08.2017
 # ============================================================================
-#  DESCRIPTION: ---
+#  DESCRIPTION: run mcmc chain for one galaxy, which will be used in hba
 #      OPTIONS: ---
 # REQUIREMENTS: ---
 #         BUGS: ---

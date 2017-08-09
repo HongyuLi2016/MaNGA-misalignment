@@ -15,7 +15,7 @@
 # ============================================================================
 import numpy as np
 import util_angle
-import util_sample_B as util_sample
+import util_sample_A as util_sample
 from scipy.optimize import minimize
 
 
