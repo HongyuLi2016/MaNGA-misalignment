@@ -52,8 +52,9 @@ except OSError:
 data = np.genfromtxt(options.fname, usecols=[1, 3])
 eps_obs = data[:, 1]
 Psai_obs = np.radians(data[:, 0])
-sampler = ul.hyperMCMC_A(eps_obs, Psai_obs, nstep=1000,
-                         burnin=500, nwalkers=200)
+sampler = ul.hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500,
+                         nwalkers=200, size=3000000, bins=30, seed=88562189,
+                         interp=True)
 
 chain = sampler.chain
 lnprobability = sampler.lnprobability

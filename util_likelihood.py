@@ -22,6 +22,7 @@ import util_sample_A as util_sample
 from time import time, localtime, strftime
 import socket
 import sys
+from scipy.interpolate import RectBivariateSpline
 # import matplotlib.pyplot as plt
 
 # ---------------------------- hyper mcmc A --------------------------------
@@ -64,7 +65,7 @@ def flat_initp(keys, nwalkers, boundary=None):
 # ----------------------- hyper parameter sampler A --------------------------
 def likelihood_A(pars, Psai_obs=None, eps_obs=None,
                  size=3000000, bins=50, seed=88562189,
-                 theta=None, phi=None):
+                 theta=None, phi=None, interp=True):
     in_boundary = check_boundary(pars, boundary=boundary_A,
                                  paraNames=paraNames_A)
     if not in_boundary:
@@ -77,7 +78,6 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
                                   boundary=[0.5, 1.0], size=size)
     eta = util_sample.get_sample(mu_eta, sigma_eta,
                                  boundary=[0.5, 1.0], size=size)
-
     ksai = eta * zeta
     Psai_int = util_sample.get_sample(mu_Psai_int, sigma_Psai_int,
                                       boundary=[0.0, np.pi/2.0], size=size)
@@ -86,20 +86,41 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
         np.histogram2d(eps, Psai, range=[[0.0, 1.0], [0.0, np.pi/2.0]],
                        normed=True, bins=bins)
     H = H.clip(1e-8, None)
-    i_eps = (np.floor(eps_obs / (1.0 / bins))).astype(int)
-    i_Psai = (np.floor(Psai_obs / (np.pi/2.0 / bins))).astype(int)
-    lnprob = np.log(H[i_eps, i_Psai]).sum()
-    # print pars, lnprob
+    if not interp:
+        i_eps = (np.floor(eps_obs / (1.0 / bins))).astype(int)
+        i_Psai = (np.floor(Psai_obs / (np.pi/2.0 / bins))).astype(int)
+        lnprob = np.log(H[i_eps, i_Psai]).sum()
+        # print pars, lnprob
+    else:
+        # plt.imshow(H, origin='lower')
+        # plt.savefig('img.png')
+        x_grid = 0.5 * (xedges[1:] + xedges[0:-1])
+        y_grid = 0.5 * (yedges[1:] + yedges[0:-1])
+        # xx = np.linspace(0, 1.0, 100)
+        # yy = np.linspace(0, np.pi/2.0, 100)
+        # X, Y = np.meshgrid(xx, yy, indexing='ij')
+        # print X.shape, Y.shape
+        # x: eps  y: Psai   H: row - eps  column - Psai
+        f_lnprob = RectBivariateSpline(x_grid, y_grid, H, kx=1, ky=1,
+                                       bbox=[0.0, 1.0, 0.0, np.pi/2.0])
+        prob_obs = f_lnprob.ev(eps_obs, Psai_obs)
+        lnprob = np.log(prob_obs).sum()
+        # plt.imshow(lnprob_obs, origin='lower')
+        # plt.savefig('img_interpo.png')
+        # exit()
+        # print pars, lnprob
     if np.isnan(lnprob):
         return -np.inf
     return lnprob
 
 
 def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
-                ndim=6, threads=1, size=3000000, bins=50, seed=88562189):
+                ndim=6, threads=1, size=3000000, bins=30, seed=88562189,
+                interp=True):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
-    size = comm.Get_size()
+    proc_size = comm.Get_size()
+    np.random.seed(seed=seed)
     theta, phi = util_angle.get_view_angle(size)
     if rank == 0:
         date = strftime('%Y-%m-%d %X', localtime())
@@ -108,7 +129,7 @@ def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
         startTime = time()
         print('hyperMCMC for model A run at {} on {}'.format(date, uname))
         print('nstep: {}    nwalkers: {}    nprocesses: {}'
-              .format(nstep, nwalkers, size))
+              .format(nstep, nwalkers, proc_size))
         print('burnin steps: {}'.format(burnin))
         print('boundaries:')
         for key in paraNames_A:
@@ -126,7 +147,7 @@ def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
                                       'Psai_obs': Psai_obs,
                                       'size': size, 'bins': bins,
                                       'seed': seed, 'theta': theta,
-                                      'phi': phi},
+                                      'phi': phi, 'interp': interp},
                               pool=pool)
     pos, prob, state = sampler.run_mcmc(p0, burnin)
     sampler.reset()
