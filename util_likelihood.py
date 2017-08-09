@@ -130,6 +130,7 @@ def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
         print('hyperMCMC for model A run at {} on {}'.format(date, uname))
         print('nstep: {}    nwalkers: {}    nprocesses: {}'
               .format(nstep, nwalkers, proc_size))
+        print('number of galaxies: {}'.format(len(eps_obs)))
         print('burnin steps: {}'.format(burnin))
         print('boundaries:')
         for key in paraNames_A:
