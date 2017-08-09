@@ -64,7 +64,7 @@ def analysis_distribution(rst, figname='joint_distribution.png', outpath='.',
     ysize = 0.20
     axes0b = fig.add_axes([xpos, ypos, xsize, ysize])
     axes0b.plot(rst['zeta'], rst['ksai'],
-                '.k', alpha=alpha, markersize=1.0)
+                '.k', alpha=0.01, markersize=0.5)
     x = np.linspace(0.0, 1.0, 500)
     for Tri in [0.1, 0.3, 0.5, 0.7, 0.9]:
         y = np.sqrt(1.0 - (1.0-x**2)/Tri)

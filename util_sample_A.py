@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: util_sample.py
+# File: util_sample_A.py
 # Author: Hongyu Li <lhy88562189@gmail.com>
 # Date: 02.08.2017
-# Last Modified: 02.08.2017
+# Last Modified: 09.08.2017
 # ============================================================================
-#  DESCRIPTION: ---
+#  DESCRIPTION: util for generating a random sample of zeta, eta and Psai_int,
+#               assuming trancated gaussian distribution with no correlation
+#               between parameters
 #      OPTIONS: ---
 # REQUIREMENTS: ---
 #         BUGS: ---
@@ -19,17 +21,16 @@ import emcee
 from JAM.utils import corner_plot
 from JAM.utils import util_fig
 import matplotlib.pyplot as plt
+from scipy.stats import truncnorm
 from time import time, localtime, strftime
-boundary = {'zeta': [0.5, 1.0], 'ksai': [0.5, 1.0],
+boundary = {'zeta': [0.5, 1.0], 'eta': [0.5, 1.0],
             'Psai_int': [0.0, np.pi/2.0]}
-init_boundary = {'zeta': [0.8, 1.0], 'ksai': [0.5, 0.8],
-                 'Psai_int': [0.0, np.pi/2.0]}
 
 
 def check_boundary(pars):
-    zeta, ksai, Psai_int = pars
+    zeta, eta, Psai_int = pars
     if (boundary['zeta'][0] < zeta < boundary['zeta'][1]) and \
-            (boundary['ksai'][0] < ksai < zeta) and \
+            (boundary['eta'][0] < eta < boundary['eta'][1]) and \
             (boundary['Psai_int'][0] < Psai_int < boundary['Psai_int'][1]):
         return True
     else:
@@ -46,7 +47,7 @@ def lnprob_gaussian(pars, hypers={}):
     in_boundary = check_boundary(pars)
     if not in_boundary:
         return -np.inf
-    # zeta, ksai, Psai_int = pars
+    # zeta, eta, Psai_int = pars
     diff = pars - means
     lnprob = -0.5 * np.dot(diff, np.dot(icov, diff))
     return lnprob
@@ -61,15 +62,15 @@ def flat_initp(keys, nwalkers):
     ndim = len(keys)
     p0 = np.zeros([nwalkers, ndim])
     for i in range(ndim):
-        p0[:, i] = np.random.uniform(low=init_boundary[keys[i]][0]+1e-4,
-                                     high=init_boundary[keys[i]][1]-1e-4,
+        p0[:, i] = np.random.uniform(low=boundary[keys[i]][0]+1e-4,
+                                     high=boundary[keys[i]][1]-1e-4,
                                      size=nwalkers)
     return p0
 
 
 def get_sample_mcmc(paras={}, nwalkers=300, burnin=300):
     '''
-    Draw random an sample of b/a, c/a, Psai_int
+    Draw random an sample of b/a, c/b, Psai_int
     '''
     if 'method' not in paras.keys():
         paras['method'] = 'gaussian'
@@ -92,8 +93,8 @@ def get_sample_mcmc(paras={}, nwalkers=300, burnin=300):
     print('boundaries:')
     print('zeta: [{:.2f}, {:.2f}]'.format(boundary['zeta'][0],
                                           boundary['zeta'][1]))
-    print('ksai: [{:.2f}, {:.2f}]'.format(boundary['ksai'][0],
-                                          boundary['ksai'][1]))
+    print('eta: [{:.2f}, {:.2f}]'.format(boundary['eta'][0],
+                                         boundary['eta'][1]))
     print('Psai_int: [{:.2f}, {:.2f}]'.format(boundary['Psai_int'][0],
                                               boundary['Psai_int'][1]))
     print('Hyper parameters:')
@@ -102,7 +103,7 @@ def get_sample_mcmc(paras={}, nwalkers=300, burnin=300):
         print(key)
         print(paras['hypers'][key])
         print('--------------------')
-    keys = ['zeta', 'ksai', 'Psai_int']
+    keys = ['zeta', 'eta', 'Psai_int']
     p0 = flat_initp(keys, nwalkers)
     sampler = \
         emcee.EnsembleSampler(nwalkers, 3, lnprob,
@@ -112,6 +113,7 @@ def get_sample_mcmc(paras={}, nwalkers=300, burnin=300):
     sampler.reset()
     sampler.run_mcmc(pos, steps)
     rst = {}
+    rst['paras'] = keys
     rst['chain'] = sampler.chain
     rst['lnprobability'] = sampler.lnprobability
     rst['acceptance_fraction'] = sampler.acceptance_fraction
@@ -120,13 +122,16 @@ def get_sample_mcmc(paras={}, nwalkers=300, burnin=300):
     return rst
 
 
-def get_sample():
-    return
+def get_sample(mean, sigma, boundary=[0.5, 1.0], size=1000):
+    a = (boundary[0] - mean) / sigma
+    b = (boundary[1] - mean) / sigma
+    rv = truncnorm(a, b, loc=mean, scale=sigma)
+    return rv.rvs(size=size)
 
 
 def plot_chains(chain):
     ndim = 3
-    labels = [r'$\mathbf{\zeta}$', r'$\mathbf{\xi}$',
+    labels = [r'$\mathbf{\zeta}$', r'$\mathbf{\eta}$',
               r'$\mathbf{\Psi_{int}}$']
     lim = [[0.0, 1.0], [0.0, 1.0], [0.0, np.pi/2.0]]
     figsize = (8.0, ndim*2.0)
@@ -143,7 +148,7 @@ def analysis_sample(rst, figname='mcmc.png', outpath='.',
                     clevel=[0.4, 0.683, 0.95, 0.997], truths=None,
                     hbins=30, color=[0.8936, 0.5106, 0.2553, 0.01276],
                     burnin=0, alpha=0.02, **kwargs):
-    labels = [r'$\mathbf{\zeta}$', r'$\mathbf{\xi}$',
+    labels = [r'$\mathbf{\zeta}$', r'$\mathbf{\eta}$',
               r'$\mathbf{\Psi_{int}}$']
     chain = rst['chain']
     # fig_chain = plot_chains(rst['chain'])

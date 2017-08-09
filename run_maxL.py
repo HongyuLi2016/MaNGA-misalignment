@@ -15,6 +15,9 @@
 # ============================================================================
 import util_maxL
 import numpy as np
+import util_angle
+import util_sample_B as util_sample
+import util_analysis
 from optparse import OptionParser
 import pickle
 import os
@@ -34,8 +37,8 @@ except OSError:
 data = np.genfromtxt(options.fname, usecols=[1, 3])
 eps_obs = data[:, 1]
 Psai_obs = np.radians(data[:, 0])
-p0 = [0.7, 0.5, 0.7, 0.5, 0.1, 0.1]
-res = util_maxL.run_minimize(Psai_obs, eps_obs, p0)
+p0 = [0.8, 0.1, 0.75, 0.15, 0.78539816, 0.1745]
+res = util_maxL.run_minimize(Psai_obs, eps_obs, p0, size=300000)
 sol = res['x']
 print(sol)
 print('Success: {}'.format(res['success']))
@@ -43,3 +46,39 @@ print(res['message'])
 print('nit: {}'.format(res['nit']))
 with open('{}/res.dat'.format(args[0]), 'w') as f:
     pickle.dump(res, f)
+
+mean_zeta = sol[0]
+mean_eta = sol[2]
+mean_Psai_int = sol[4]
+sigma_zeta = sol[1]
+sigma_eta = sol[3]
+sigma_Psai_int = sol[5]
+# assign sampler parameters
+size = 300000
+# draw a sample for axis ratios and intrinsic misalignments
+zeta = util_sample.get_sample(mean_zeta, sigma_zeta,
+                              boundary=[0.5, 1.0], size=size)
+eta = util_sample.get_sample(mean_eta, sigma_eta,
+                             boundary=[0.5, 1.0], size=size)
+ksai = eta * zeta
+Psai_int = util_sample.get_sample(mean_Psai_int, sigma_Psai_int,
+                                  boundary=[0.0, np.pi/2.0], size=size)
+# calculate apparent misalignment
+theta, phi = util_angle.get_view_angle(size)
+
+Psai, eps = util_angle.get_Psai(theta, phi, zeta, ksai, Psai_int)
+
+# save resutls in a dict
+rst = {}
+rst['zeta'] = zeta
+rst['ksai'] = ksai
+rst['Psai_int'] = Psai_int
+rst['Psai'] = Psai
+rst['eps'] = eps
+rst['costheta'] = np.cos(theta)
+rst['phi'] = phi
+# analysis distribution of apparent misalignment
+util_analysis.analysis_distribution(rst, outpath=args[0])
+# util_analysis.plot_axis_ratio(zeta, ksai, outpath=args[0])
+with open('{}/rst.dat'.format(args[0]), 'w') as f:
+    pickle.dump(rst, f)

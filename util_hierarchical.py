@@ -33,10 +33,10 @@ parLabels = [r'$\mathbf{\zeta}$', r'$\mathbf{\eta}$',
              r'$\mathbf{\phi}$']
 
 # ---------------------------- hyper mcmc A --------------------------------
-boundary_A = {'mu_zeta': [0.5, 1.0], 'sigma_zeta': [0.0, 10.0],
-              'mu_eta': [0.5, 1.0], 'sigma_eta': [0.0, 10.0],
+boundary_A = {'mu_zeta': [0.5, 1.0], 'sigma_zeta': [0.03, 4.0],
+              'mu_eta': [0.5, 1.0], 'sigma_eta': [0.03, 4.0],
               'mu_Psai_int': [0.0, np.pi/2.0],
-              'sigma_Psai_int': [0.0, 10.0*np.pi]}
+              'sigma_Psai_int': [0.03, 2.0*np.pi]}
 paraNames_A = ['mu_zeta', 'sigma_zeta', 'mu_eta', 'sigma_eta',
                'mu_Psai_int', 'sigma_Psai_int']
 parLabels_A = [r'$\mathbf{\mu_{\zeta}}$', r'$\mathbf{\sigma_{\zeta}}$',
