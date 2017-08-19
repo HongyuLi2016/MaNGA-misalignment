@@ -122,11 +122,11 @@ def get_sample_mcmc(paras={}, nwalkers=300, burnin=300):
     return rst
 
 
-def get_sample(mean, sigma, boundary=[0.5, 1.0], size=1000):
+def get_sample(mean, sigma, boundary=[0.5, 1.0], size=1000, seed=None):
     a = (boundary[0] - mean) / sigma
     b = (boundary[1] - mean) / sigma
-    rv = truncnorm(a, b, loc=mean, scale=sigma)
-    return rv.rvs(size=size)
+    return truncnorm.rvs(a, b, loc=mean, scale=sigma,
+                         size=size, random_state=seed)
 
 
 def plot_chains(chain):

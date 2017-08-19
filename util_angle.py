@@ -118,14 +118,24 @@ def get_Psai(theta, phi, zeta, ksai, Psai_int):
     return Psai, 1.0-q
 
 
-def get_view_angle(size):
+def get_view_angle(size, seed=None):
     '''
     draw a random sample of viewing angles
     return
     theta - (0, pi)
     phi - (0, 2pi)
     '''
-    phi = stats.uniform.rvs(size=size, loc=0.0, scale=2.0*np.pi)
-    cos_theta = stats.uniform.rvs(size=size, loc=-1.0, scale=2.0)
+    if seed is None:
+        seed_phi = None
+        seed_theta = None
+    else:
+        seed_phi = seed % 863 + 11
+        seed_theta = seed % 865 + 13
+        if seed_phi == seed_theta:
+            raise ValueError('seed phi and theta are the same!')
+    phi = stats.uniform.rvs(size=size, loc=0.0, scale=2.0*np.pi,
+                            random_state=seed_phi)
+    cos_theta = stats.uniform.rvs(size=size, loc=-1.0, scale=2.0,
+                                  random_state=seed_theta)
     theta = np.arccos(cos_theta)
     return theta, phi

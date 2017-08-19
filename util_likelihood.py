@@ -64,23 +64,26 @@ def flat_initp(keys, nwalkers, boundary=None):
 
 # ----------------------- hyper parameter sampler A --------------------------
 def likelihood_A(pars, Psai_obs=None, eps_obs=None,
-                 size=5000000, bins=25, seed=88562189,
+                 size=5000000, bins=25, seed=None,
                  theta=None, phi=None, interp=True):
     in_boundary = check_boundary(pars, boundary=boundary_A,
                                  paraNames=paraNames_A)
     if not in_boundary:
         return -np.inf
-    np.random.seed(seed=seed)
     mu_zeta, sigma_zeta, mu_eta, sigma_eta, mu_Psai_int, sigma_Psai_int = pars
     if theta is None:
-        theta, phi = util_angle.get_view_angle(size)
-    zeta = util_sample.get_sample(mu_zeta, sigma_zeta,
-                                  boundary=[0.5, 1.0], size=size)
-    eta = util_sample.get_sample(mu_eta, sigma_eta,
-                                 boundary=[0.5, 1.0], size=size)
+        theta, phi = util_angle.get_view_angle(size, seed=seed)
+    seed_zeta = (seed % 473) + 1 if seed is not None else None
+    zeta = util_sample.get_sample(mu_zeta, sigma_zeta, boundary=[0.5, 1.0],
+                                  size=size, seed=seed_zeta)
+    seed_eta = (seed % 473) + 3 if seed is not None else None
+    eta = util_sample.get_sample(mu_eta, sigma_eta, boundary=[0.5, 1.0],
+                                 size=size, seed=seed_eta)
     ksai = eta * zeta
+    seed_Psai_int = (seed % 473) + 5 if seed is not None else None
     Psai_int = util_sample.get_sample(mu_Psai_int, sigma_Psai_int,
-                                      boundary=[0.0, np.pi/2.0], size=size)
+                                      boundary=[0.0, np.pi/2.0],
+                                      size=size, seed=seed_Psai_int)
     Psai, eps = util_angle.get_Psai(theta, phi, zeta, ksai, Psai_int)
     H, xedges, yedges = \
         np.histogram2d(eps, Psai, range=[[0.0, 1.0], [0.0, np.pi/2.0]],
@@ -115,13 +118,12 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
 
 
 def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
-                ndim=6, threads=1, size=5000000, bins=25, seed=88562189,
+                ndim=6, threads=1, size=5000000, bins=25, seed=None,
                 interp=True):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     proc_size = comm.Get_size()
-    np.random.seed(seed=seed)
-    theta, phi = util_angle.get_view_angle(size)
+    theta, phi = util_angle.get_view_angle(size, seed=seed)
     if rank == 0:
         date = strftime('%Y-%m-%d %X', localtime())
         uname = socket.gethostname()
@@ -131,6 +133,10 @@ def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
         print('nstep: {}    nwalkers: {}    nprocesses: {}'
               .format(nstep, nwalkers, proc_size))
         print('number of galaxies: {}'.format(len(eps_obs)))
+        print('number of random points: {}'.format(size))
+        print('number of bins: {}'.format(bins))
+        print('interpolation: {}'.format(interp))
+        print('random number seed: {}'.format(seed))
         print('burnin steps: {}'.format(burnin))
         print('boundaries:')
         for key in paraNames_A:
