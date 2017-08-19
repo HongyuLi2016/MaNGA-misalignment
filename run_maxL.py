@@ -16,7 +16,7 @@
 import util_maxL
 import numpy as np
 import util_angle
-import util_sample_B as util_sample
+import util_sample_A as util_sample
 import util_analysis
 from optparse import OptionParser
 import pickle
@@ -37,8 +37,12 @@ except OSError:
 data = np.genfromtxt(options.fname, usecols=[1, 3])
 eps_obs = data[:, 1]
 Psai_obs = np.radians(data[:, 0])
-p0 = [0.8, 0.1, 0.75, 0.15, 0.78539816, 0.1745]
-res = util_maxL.run_minimize(Psai_obs, eps_obs, p0, size=300000)
+# p0 = [0.8, 0.1, 0.85, 0.05, 0.78539816, 0.17453]
+# p0 = [0.8, 0.1, 0.75, 0.15, 0.78539816, 0.1745]
+p0 = [0.70710598, 0.08248679, 0.85836017, 0.13923725, 0.80944239, 0.14843667]
+options = {'maxiter': 1000, 'disp': True, 'eps': 0.0001}
+res = util_maxL.run_minimize(Psai_obs, eps_obs, p0, size=5000000, bins=25,
+                             options=options, interp=True, seed=88562189)
 sol = res['x']
 print(sol)
 print('Success: {}'.format(res['success']))

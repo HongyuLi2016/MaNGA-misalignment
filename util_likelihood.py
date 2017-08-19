@@ -26,10 +26,10 @@ from scipy.interpolate import RectBivariateSpline
 # import matplotlib.pyplot as plt
 
 # ---------------------------- hyper mcmc A --------------------------------
-boundary_A = {'mu_zeta': [0.5, 1.0], 'sigma_zeta': [0.03, 4.0],
-              'mu_eta': [0.5, 1.0], 'sigma_eta': [0.03, 4.0],
+boundary_A = {'mu_zeta': [0.5, 1.0], 'sigma_zeta': [0.03, 1.0],
+              'mu_eta': [0.5, 1.0], 'sigma_eta': [0.03, 1.0],
               'mu_Psai_int': [0.0, np.pi/2.0],
-              'sigma_Psai_int': [0.03, 2.0*np.pi]}
+              'sigma_Psai_int': [0.03, 1.5*np.pi]}
 paraNames_A = ['mu_zeta', 'sigma_zeta', 'mu_eta', 'sigma_eta',
                'mu_Psai_int', 'sigma_Psai_int']
 parLabels_A = [r'$\mathbf{\mu_{\zeta}}$', r'$\mathbf{\sigma_{\zeta}}$',
@@ -64,7 +64,7 @@ def flat_initp(keys, nwalkers, boundary=None):
 
 # ----------------------- hyper parameter sampler A --------------------------
 def likelihood_A(pars, Psai_obs=None, eps_obs=None,
-                 size=3000000, bins=50, seed=88562189,
+                 size=5000000, bins=25, seed=88562189,
                  theta=None, phi=None, interp=True):
     in_boundary = check_boundary(pars, boundary=boundary_A,
                                  paraNames=paraNames_A)
@@ -103,19 +103,19 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
         # x: eps  y: Psai   H: row - eps  column - Psai
         f_lnprob = RectBivariateSpline(x_grid, y_grid, H, kx=1, ky=1,
                                        bbox=[0.0, 1.0, 0.0, np.pi/2.0])
-        prob_obs = f_lnprob.ev(eps_obs, Psai_obs)
+        prob_obs = f_lnprob.ev(eps_obs, Psai_obs).clip(1e-8, None)
         lnprob = np.log(prob_obs).sum()
         # plt.imshow(lnprob_obs, origin='lower')
         # plt.savefig('img_interpo.png')
         # exit()
-        # print pars, lnprob
     if np.isnan(lnprob):
         return -np.inf
+    # print pars, lnprob
     return lnprob
 
 
 def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
-                ndim=6, threads=1, size=3000000, bins=30, seed=88562189,
+                ndim=6, threads=1, size=5000000, bins=25, seed=88562189,
                 interp=True):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
