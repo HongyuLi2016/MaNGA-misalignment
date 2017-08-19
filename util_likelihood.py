@@ -156,9 +156,29 @@ def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
                                       'seed': seed, 'theta': theta,
                                       'phi': phi, 'interp': interp},
                               pool=pool)
-    pos, prob, state = sampler.run_mcmc(p0, burnin)
+
+    # ------------------------ burnin --------------------------
+    print_burnin = burnin // 20
+    print 'burning start'
+    sys.stdout.flush()
+    for i, result in enumerate(sampler.sample(p0, iterations=burnin)):
+        if ((i+1) % print_burnin == 0) and (rank == 0):
+            print("{0:5.1%}".format(float(i+1) / burnin))
+            sys.stdout.flush()
+    print 'burning finish'
+    # pos, prob, state = sampler.run_mcmc(p0, burnin)
+    pos, prob, state = result
     sampler.reset()
-    sampler.run_mcmc(pos, nstep)
+    # ---------------------- run ----------------------------
+    print_run = nstep // 20
+    print 'run start'
+    for i, result in enumerate(sampler.sample(result[0], iterations=nstep)):
+        if ((i+1) % print_run == 0) and (rank == 0):
+            print("{0:5.1%}".format(float(i+1) / nstep))
+            sys.stdout.flush()
+    print 'finish'
+
+    # sampler.run_mcmc(pos, nstep)
     pool.close()
     print('Finish! Total elapsed time is: {:.2f}s'
           .format(time()-startTime))
