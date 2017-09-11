@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: util_hierarchical.py
-# Author: Hongyu Li <lhy88562189@gmail.com>
-# Date: 03.08.2017
+# File              : util_likelihood.py
+# Author            : Hongyu Li <lhy88562189@gmail.com>
+# Date              : 08.09.2017
+# Last Modified Date: 08.09.2017
+# Last Modified By  : Hongyu Li <lhy88562189@gmail.com>
+# -*- coding: utf-8 -*-
+# File              : util_likelihood.py
+# Author            : Hongyu Li <lhy88562189@gmail.com>
+# Date              : 03.08.2017
 # Last Modified: 05.08.2017
 # ============================================================================
 #  DESCRIPTION: ---
@@ -18,7 +24,7 @@ from emcee.utils import MPIPool
 from mpi4py import MPI
 import numpy as np
 import util_angle
-import util_sample_A as util_sample
+import util_sample_A
 from time import time, localtime, strftime
 import socket
 import sys
@@ -74,16 +80,16 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
     if theta is None:
         theta, phi = util_angle.get_view_angle(size, seed=seed)
     seed_zeta = (seed % 473) + 1 if seed is not None else None
-    zeta = util_sample.get_sample(mu_zeta, sigma_zeta, boundary=[0.5, 1.0],
-                                  size=size, seed=seed_zeta)
+    zeta = util_sample_A.get_sample(mu_zeta, sigma_zeta, boundary=[0.6, 1.0],
+                                    size=size, seed=seed_zeta)
     seed_eta = (seed % 473) + 3 if seed is not None else None
-    eta = util_sample.get_sample(mu_eta, sigma_eta, boundary=[0.5, 1.0],
-                                 size=size, seed=seed_eta)
+    eta = util_sample_A.get_sample(mu_eta, sigma_eta, boundary=[0.6, 1.0],
+                                   size=size, seed=seed_eta)
     ksai = eta * zeta
     seed_Psai_int = (seed % 473) + 5 if seed is not None else None
-    Psai_int = util_sample.get_sample(mu_Psai_int, sigma_Psai_int,
-                                      boundary=[0.0, np.pi/2.0],
-                                      size=size, seed=seed_Psai_int)
+    Psai_int = util_sample_A.get_sample(mu_Psai_int, sigma_Psai_int,
+                                        boundary=[0.0, np.pi/2.0],
+                                        size=size, seed=seed_Psai_int)
     Psai, eps = util_angle.get_Psai(theta, phi, zeta, ksai, Psai_int)
     H, xedges, yedges = \
         np.histogram2d(eps, Psai, range=[[0.0, 1.0], [0.0, np.pi/2.0]],

@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: run_gaussian_A0.py
-# Author: Hongyu Li <lhy88562189@gmail.com>
-# Date: 01.08.2017
+# File              : run_gaussian_A0.py
+# Author            : Hongyu Li <lhy88562189@gmail.com>
+# Date              : 08.09.2017
+# Last Modified Date: 08.09.2017
+# Last Modified By  : Hongyu Li <lhy88562189@gmail.com>
+# -*- coding: utf-8 -*-
+# File              : run_gaussian_A0.py
+# Author            : Hongyu Li <lhy88562189@gmail.com>
+# Date              : 01.08.2017
 # Last Modified: 09.08.2017
 # ============================================================================
 #  DESCRIPTION: ---
@@ -66,12 +72,14 @@ flatchain = hyperParas['chain'].reshape(-1, 3)
 theta, phi = util_angle.get_view_angle(nwalkers*nsteps)
 zeta = flatchain[:, 0]
 ksai = flatchain[:, 1]
+eta = ksai/zeta
 Psai_int = flatchain[:, 2]
 Psai, eps = util_angle.get_Psai(theta, phi, zeta, ksai, Psai_int)
 
 # save resutls in a dict
 rst = {}
 rst['zeta'] = zeta
+rst['eta'] = eta
 rst['ksai'] = ksai
 rst['Psai_int'] = Psai_int
 rst['Psai'] = Psai

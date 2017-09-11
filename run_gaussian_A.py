@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: run_gaussian_A.py
-# Author: Hongyu Li <lhy88562189@gmail.com>
-# Date: 01.08.2017
-# Last Modified: 09.08.2017
+# File              : run_gaussian_A.py
+# Author            : Hongyu Li <lhy88562189@gmail.com>
+# Date              : 08.09.2017
+# Last Modified Date: 11.09.2017
+# Last Modified By  : Hongyu Li <lhy88562189@gmail.com>
 # ============================================================================
 #  DESCRIPTION: ---
 #      OPTIONS: ---
@@ -22,8 +23,8 @@ import os
 import pickle
 import sys
 
-# util_angle.boundary['zeta'][0] = 0.0
-# util_angle.boundary['eta'][0] = 0.0
+util_sample.boundary['zeta'][0] = 0.6
+util_sample.boundary['eta'][0] = 0.6
 
 parser = OptionParser()
 (options, args) = parser.parse_args()
@@ -73,6 +74,7 @@ Psai, eps = util_angle.get_Psai(theta, phi, zeta, ksai, Psai_int)
 # save resutls in a dict
 rst = {}
 rst['zeta'] = zeta
+rst['eta'] = eta
 rst['ksai'] = ksai
 rst['Psai_int'] = Psai_int
 rst['Psai'] = Psai

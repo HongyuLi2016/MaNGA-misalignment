@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: run_gaussian_A_scipy.py
-# Author: Hongyu Li <lhy88562189@gmail.com>
-# Date: 01.08.2017
+# File              : run_gaussian_A_scipy.py
+# Author            : Hongyu Li <lhy88562189@gmail.com>
+# Date              : 08.09.2017
+# Last Modified Date: 08.09.2017
+# Last Modified By  : Hongyu Li <lhy88562189@gmail.com>
+# -*- coding: utf-8 -*-
+# File              : run_gaussian_A_scipy.py
+# Author            : Hongyu Li <lhy88562189@gmail.com>
+# Date              : 01.08.2017
 # Last Modified: 09.08.2017
 # ============================================================================
 #  DESCRIPTION: same as run_gaussian_A, but using scipy to sample b/a, c/b and
@@ -48,9 +54,9 @@ sigma_Psai_int = 0.1
 size = 300000
 # draw a sample for axis ratios and intrinsic misalignments
 zeta = util_sample.get_sample(mean_zeta, sigma_zeta,
-                              boundary=[0.5, 1.0], size=size)
+                              boundary=[0.6, 1.0], size=size, seed=88562189)
 eta = util_sample.get_sample(mean_eta, sigma_eta,
-                             boundary=[0.5, 1.0], size=size)
+                             boundary=[0.6, 1.0], size=size, seed=562189)
 ksai = eta * zeta
 Psai_int = util_sample.get_sample(mean_Psai_int, sigma_Psai_int,
                                   boundary=[0.0, np.pi/2.0], size=size)
@@ -62,6 +68,7 @@ Psai, eps = util_angle.get_Psai(theta, phi, zeta, ksai, Psai_int)
 # save resutls in a dict
 rst = {}
 rst['zeta'] = zeta
+rst['eta'] = eta
 rst['ksai'] = ksai
 rst['Psai_int'] = Psai_int
 rst['Psai'] = Psai

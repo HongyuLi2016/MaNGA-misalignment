@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: run_maxL.py
-# Author: Hongyu Li <lhy88562189@gmail.com>
-# Date: 07.08.2017
-# Last Modified: 07.08.2017
+# File              : run_maxL-mcmc.py
+# Author            : Hongyu Li <lhy88562189@gmail.com>
+# Date              : 11.09.2017
+# Last Modified Date: 11.09.2017
+# Last Modified By  : Hongyu Li <lhy88562189@gmail.com>
 # ============================================================================
 #  DESCRIPTION: ---
 #      OPTIONS: ---
@@ -17,7 +18,7 @@
 import util_likelihood as ul
 import numpy as np
 # import util_analysis
-from JAM.utils import corner_plot
+# from JAM.utils import corner_plot
 from optparse import OptionParser
 import pickle
 import os
@@ -71,12 +72,12 @@ with open('{}/hyper_chain.dat'.format(args[0]), 'w') as f:
 fig = plot_chains(chain)
 fig.savefig('{}/hyper_chain.png'.format(args[0]))
 
-clevel = [0.4, 0.683, 0.95, 0.997]
-color = [0.8936, 0.5106, 0.2553, 0.01276]
-hbins = 30
-lim = [ul.boundary_A[key] for key in ul.paraNames_A]
-fig = corner_plot.corner(flatchain, clevel=clevel, hbins=hbins,
-                         color=color, resample=False,
-                         quantiles=[0.16, 0.5, 0.84], linewidths=2.0,
-                         labels=ul.parLabels_A)
-fig.savefig('{}/hyper_mcmc.png'.format(args[0]))
+# clevel = [0.4, 0.683, 0.95, 0.997]
+# color = [0.8936, 0.5106, 0.2553, 0.01276]
+# hbins = 30
+# lim = [ul.boundary_A[key] for key in ul.paraNames_A]
+# fig = corner_plot.corner(flatchain, clevel=clevel, hbins=hbins,
+#                          color=color, resample=False,
+#                          quantiles=[0.16, 0.5, 0.84], linewidths=2.0,
+#                          labels=ul.parLabels_A)
+# fig.savefig('{}/hyper_mcmc.png'.format(args[0]))
