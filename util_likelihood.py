@@ -3,7 +3,7 @@
 # File              : util_likelihood.py
 # Author            : Hongyu Li <lhy88562189@gmail.com>
 # Date              : 08.09.2017
-# Last Modified Date: 08.09.2017
+# Last Modified Date: 21.09.2017
 # Last Modified By  : Hongyu Li <lhy88562189@gmail.com>
 # -*- coding: utf-8 -*-
 # File              : util_likelihood.py
@@ -71,7 +71,8 @@ def flat_initp(keys, nwalkers, boundary=None):
 # ----------------------- hyper parameter sampler A --------------------------
 def likelihood_A(pars, Psai_obs=None, eps_obs=None,
                  size=5000000, bins=25, seed=None,
-                 theta=None, phi=None, interp=True):
+                 theta=None, phi=None, interp=True,
+                 returnAll=False):
     in_boundary = check_boundary(pars, boundary=boundary_A,
                                  paraNames=paraNames_A)
     if not in_boundary:
@@ -117,6 +118,18 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
         # plt.imshow(lnprob_obs, origin='lower')
         # plt.savefig('img_interpo.png')
         # exit()
+    if returnAll:
+        rst = {}
+        rst['zeta'] = zeta
+        rst['eta'] = eta
+        rst['ksai'] = ksai
+        rst['Psai_int'] = Psai_int
+        rst['Psai'] = Psai
+        rst['eps'] = eps
+        rst['costheta'] = np.cos(theta)
+        rst['phi'] = phi
+        rst['lnprob'] = lnprob
+        return rst
     if np.isnan(lnprob):
         return -np.inf
     # print pars, lnprob
