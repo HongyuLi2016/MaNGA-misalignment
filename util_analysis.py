@@ -3,7 +3,7 @@
 # File              : util_analysis.py
 # Author            : Hongyu Li <lhy88562189@gmail.com>
 # Date              : 08.09.2017
-# Last Modified Date: 21.09.2017
+# Last Modified Date: 22.09.2017
 # Last Modified By  : Hongyu Li <lhy88562189@gmail.com>
 # ============================================================================
 #  DESCRIPTION: ---
@@ -19,6 +19,7 @@ import numpy as np
 from JAM.utils import corner_plot
 from JAM.utils import util_fig
 import matplotlib.pyplot as plt
+from scipy.stats import ks_2samp
 np.seterr(all='ignore')
 
 
@@ -105,20 +106,56 @@ def analysis_distribution(rst, figname='joint_distribution.png', outpath='.',
     fig.savefig('{}/{}'.format(outpath, figname), dpi=100)
 
 
-def plot_axis_ratio(ba, ca, outpath='.', markersize=1.0, alpha=0.02):
-    fig, axes = plt.subplots(1, 1, figsize=(6, 6))
-    fig.subplots_adjust(left=0.130, bottom=0.130, right=0.98,
-                        top=0.98, wspace=0.1, hspace=0.26)
-    axes.plot(ba, ca, '.k', markersize=markersize, alpha=alpha)
+def plot_axis_ratio(rst, outpath='.', markersize=1.0, alpha=0.02):
+    ba = rst['zeta']
+    ca = rst['ksai']
+    Psai_int = np.degrees(rst['Psai_int'])
+    fig, axes = plt.subplots(2, 2, figsize=(6, 4))
+    fig.subplots_adjust(left=0.09, bottom=0.135, right=0.98,
+                        top=0.98, wspace=0.3, hspace=0.36)
+    # axes[1, 1].plot(ba, ca, '.k', markersize=markersize, alpha=alpha)
+    axes[0, 0].hist(ba, range=[0.0, 1.0], bins=200, normed=True, color='b')
+    axes[0, 0].set_xlabel(r'$\mathbf{b/a}$',
+                          fontproperties=util_fig.label_font)
+    axes[0, 0].set_ylabel(r'$\mathbf{PDF}$',
+                          fontproperties=util_fig.label_font)
+    axes[0, 0].set_yticklabels([''])
+
+    axes[0, 1].hist(ca, range=[0.0, 1.0], bins=200, normed=True, color='b')
+    axes[0, 1].set_xlabel(r'$\mathbf{c/a}$',
+                          fontproperties=util_fig.label_font)
+    axes[0, 1].set_ylabel(r'$\mathbf{PDF}$',
+                          fontproperties=util_fig.label_font)
+    axes[0, 1].set_yticklabels([''])
+
+    axes[1, 0].hist(Psai_int, range=[0.0, 90.0], bins=200,
+                    normed=True, color='b')
+    axes[1, 0].set_xlabel(r'$\mathbf{\Psi_{int}}$',
+                          fontproperties=util_fig.label_font)
+    axes[1, 0].set_ylabel(r'$\mathbf{PDF}$',
+                          fontproperties=util_fig.label_font)
+    axes[1, 0].set_yticklabels([''])
+
+    hist2d(ba, ca, ax=axes[1, 1],
+           xlim=[0.0, 1.0], ylim=[0.0, 1.0], bins=100,
+           log=False, cmap='afmhot_r')
     lim = np.array([0.0, 1.0])
-    axes.set_xlim(lim)
-    axes.set_ylim(lim)
-    axes.plot(lim, lim, '--r', lw=2.0)
-    util_fig.set_labels(axes)
-    axes.set_xlabel(r'$\mathbf{\zeta}$',
-                    fontproperties=util_fig.label_font)
-    axes.set_ylabel(r'$\mathbf{\xi}$',
-                    fontproperties=util_fig.label_font)
+    axes[1, 1].set_xlim(lim)
+    axes[1, 1].set_ylim(lim)
+    axes[1, 1].plot(lim, lim, '--r', lw=2.0)
+
+    axes[1, 1].set_xlabel(r'$\mathbf{b/a}$',
+                          fontproperties=util_fig.label_font)
+    axes[1, 1].set_ylabel(r'$\mathbf{c/a}$',
+                          fontproperties=util_fig.label_font)
+    x = np.linspace(0.0, 1.0, 5000)
+    for Tri in [0.1, 0.3, 0.5, 0.7, 0.9]:
+        y = np.sqrt(1.0 - (1.0-x**2)/Tri)
+        axes[1, 1].plot(x, y, '--r', lw=1.0)
+    util_fig.set_labels(axes[0, 0])
+    util_fig.set_labels(axes[0, 1])
+    util_fig.set_labels(axes[1, 0])
+    util_fig.set_labels(axes[1, 1])
     fig.savefig('{}/ba-ca.png'.format(outpath))
 
 
@@ -158,6 +195,7 @@ def cmp_obs(rst, figname='cmp_obs.png', outpath='.', symmetry=True,
     axes[0].set_ylabel('$\mathbf{\Delta PA}$',
                        fontproperties=util_fig.label_font)
 
+    KS_statistic, p_value = ks_2samp(Psai, Psai_obs)
     axes[1].hist(Psai_obs, histtype='step', color='r', lw=lw, bins=bins,
                  range=ylim, normed=True, cumulative=True)
     axes[1].hist(Psai, histtype='step', color='k', lw=lw, bins=bins,
@@ -171,7 +209,11 @@ def cmp_obs(rst, figname='cmp_obs.png', outpath='.', symmetry=True,
                  fontproperties=util_fig.text_font)
     axes[1].text(0.05, 0.65, 'Model', color='k', transform=axes[1].transAxes,
                  fontproperties=util_fig.text_font)
+    axes[1].text(0.55, 0.20, 'KS statistic:\n{:.3f}'.format(KS_statistic),
+                 color='k', transform=axes[1].transAxes,
+                 fontproperties=util_fig.text_font)
 
+    KS_statistic, p_value = ks_2samp(eps, eps_obs)
     axes[2].hist(eps_obs, histtype='step', color='r', lw=lw, bins=bins,
                  range=[0.0, 0.5], normed=True, cumulative=True)
     axes[2].hist(eps, histtype='step', color='k', lw=lw, bins=bins,
@@ -184,6 +226,9 @@ def cmp_obs(rst, figname='cmp_obs.png', outpath='.', symmetry=True,
     axes[2].text(0.05, 0.85, 'Obs', color='r', transform=axes[2].transAxes,
                  fontproperties=util_fig.text_font)
     axes[2].text(0.05, 0.65, 'Model', color='k', transform=axes[2].transAxes,
+                 fontproperties=util_fig.text_font)
+    axes[2].text(0.55, 0.20, 'KS statistic:\n{:.3f}'.format(KS_statistic),
+                 color='k', transform=axes[2].transAxes,
                  fontproperties=util_fig.text_font)
 
     ax_eps = fig.add_axes([0.28, 0.25, 0.2, 0.3])
@@ -200,7 +245,7 @@ def cmp_obs(rst, figname='cmp_obs.png', outpath='.', symmetry=True,
     ax_Psai.hist(Psai_obs, range=ylim, bins=bins, color='r',
                  normed=True, lw=3)
     ax_Psai.hist(Psai, range=ylim, bins=bins, color='k', normed=True,
-                histtype='step', lw=3)
+                 histtype='step', lw=3)
 
     ax_Psai.set_yticklabels('')
     ax_eps.set_yticklabels('')

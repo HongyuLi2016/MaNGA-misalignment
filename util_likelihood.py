@@ -3,7 +3,7 @@
 # File              : util_likelihood.py
 # Author            : Hongyu Li <lhy88562189@gmail.com>
 # Date              : 08.09.2017
-# Last Modified Date: 21.09.2017
+# Last Modified Date: 23.09.2017
 # Last Modified By  : Hongyu Li <lhy88562189@gmail.com>
 # -*- coding: utf-8 -*-
 # File              : util_likelihood.py
@@ -72,7 +72,7 @@ def flat_initp(keys, nwalkers, boundary=None):
 def likelihood_A(pars, Psai_obs=None, eps_obs=None,
                  size=5000000, bins=25, seed=None,
                  theta=None, phi=None, interp=True,
-                 returnAll=False):
+                 scale=1.0, returnAll=False):
     in_boundary = check_boundary(pars, boundary=boundary_A,
                                  paraNames=paraNames_A)
     if not in_boundary:
@@ -99,7 +99,7 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
     if not interp:
         i_eps = (np.floor(eps_obs / (1.0 / bins))).astype(int)
         i_Psai = (np.floor(Psai_obs / (np.pi/2.0 / bins))).astype(int)
-        lnprob = np.log(H[i_eps, i_Psai]).sum()
+        lnprob = np.log(H[i_eps, i_Psai]).sum() * scale
         # print pars, lnprob
     else:
         # plt.imshow(H, origin='lower')
@@ -114,7 +114,7 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
         f_lnprob = RectBivariateSpline(x_grid, y_grid, H, kx=1, ky=1,
                                        bbox=[0.0, 1.0, 0.0, np.pi/2.0])
         prob_obs = f_lnprob.ev(eps_obs, Psai_obs).clip(1e-8, None)
-        lnprob = np.log(prob_obs).sum()
+        lnprob = np.log(prob_obs).sum() * scale
         # plt.imshow(lnprob_obs, origin='lower')
         # plt.savefig('img_interpo.png')
         # exit()
@@ -138,7 +138,7 @@ def likelihood_A(pars, Psai_obs=None, eps_obs=None,
 
 def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
                 ndim=6, threads=1, size=5000000, bins=25, seed=None,
-                interp=True):
+                interp=True, scale=1.0):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     proc_size = comm.Get_size()
@@ -173,7 +173,8 @@ def hyperMCMC_A(eps_obs, Psai_obs, nstep=1000, burnin=500, nwalkers=200,
                                       'Psai_obs': Psai_obs,
                                       'size': size, 'bins': bins,
                                       'seed': seed, 'theta': theta,
-                                      'phi': phi, 'interp': interp},
+                                      'phi': phi, 'interp': interp,
+                                      'scale': scale},
                               pool=pool)
 
     # ------------------------ burnin --------------------------
